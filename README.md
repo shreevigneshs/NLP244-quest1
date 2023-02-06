@@ -5,3 +5,6 @@ Follow the .ipynb notebook glove/glove-pre-processing.ipynb to do the pre-proces
 
 ### Training with data loaders
 Follow the training_with_dataloaders.ipynb file which contains the complete data preparation + training script. It requires the glove embeddings so prior to run ing the script follow glove/glove-pre-processing.ipynb to get preprocessed glove embeddings in gensim format.
+
+### Efficient and Faster Training
+Using mixed precision helps in increasing the effeciency of model training. We achieve ~35%-40% speedups. Follow the notebook efficient_and_faster_training.ipynb.
