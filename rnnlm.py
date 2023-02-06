@@ -10,10 +10,16 @@ class RNNModel(nn.Module):
         in_embedding_dim,
         n_hidden,
         n_layers,
+        bidirectional=False,
         dropout=0.5,
         rnn_type="elman",  # can be elman, lstm, gru
+        use_glove=False
     ):
         super(RNNModel, self).__init__()
+        
+        self.use_glove = use_glove
+        self.rnn_type = rnn_type
+        self.bidirectional = True if bidirectional else False
 
         if rnn_type == "elman":
             self.rnn = nn.RNN(
@@ -22,6 +28,23 @@ class RNNModel(nn.Module):
                 n_layers,
                 nonlinearity="tanh",
                 dropout=dropout,
+                bidirectional=self.bidirectional,
+            )
+        elif rnn_type == "lstm":
+            self.rnn = nn.LSTM(
+                input_size=in_embedding_dim,
+                hidden_size=n_hidden,
+                num_layers=n_layers,
+                bidirectional=self.bidirectional,
+                dropout=dropout
+            )
+        elif rnn_type == "gru":
+            self.rnn = nn.GRU(
+                input_size=in_embedding_dim,
+                hidden_size=n_hidden,
+                num_layers=n_layers,
+                bidirectional=self.bidirectional,
+                dropout=dropout
             )
         else:
             # TODO: implement lstm and gru
@@ -30,11 +53,16 @@ class RNNModel(nn.Module):
         
         self.in_embedder = nn.Embedding(vocab_size, in_embedding_dim)
         self.dropout = nn.Dropout(dropout)
-        self.pooling = nn.Linear(n_hidden, vocab_size)
-        self.init_weights()
+        print(self.bidirectional)
+        self.num_directions = 1 if not self.bidirectional else 2
+        print("num_directions: {}".format(self.num_directions))
+        self.pooling = nn.Linear(n_hidden * self.num_directions, vocab_size)
         self.n_hidden = n_hidden
         self.n_layers = n_layers
         self.vocab_size = vocab_size
+        
+        if not self.use_glove:
+            self.init_weights()
 
     def init_weights(self):
         initrange = 0.1
@@ -52,7 +80,10 @@ class RNNModel(nn.Module):
 
     def init_hidden(self, batch_size):
         weight = next(self.parameters())
-        return weight.new_zeros(self.n_layers, batch_size, self.n_hidden)
+        if self.rnn_type == "lstm":
+            return weight.new_zeros(self.n_layers * self.num_directions, batch_size, self.n_hidden), weight.new_zeros(self.n_layers * self.num_directions, batch_size, self.n_hidden)
+        else:
+            return weight.new_zeros(self.n_layers * self.num_directions, batch_size, self.n_hidden)
 
     @staticmethod
     def load_model(path):
