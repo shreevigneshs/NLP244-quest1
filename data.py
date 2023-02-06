@@ -1,5 +1,6 @@
 import os
 from io import open
+import numpy as np
 import torch
 
 
@@ -19,12 +20,15 @@ class Vocabulary(object):
 
 
 class Corpus(object):
-    def __init__(self, path):
+    def __init__(self, path, use_glove=False, gensim_glove_weights=None):
+        
         self.vocab = Vocabulary()
         self.train = self.tokenize(os.path.join(path, "wiki.train.tokens"))
         self.valid = self.tokenize(os.path.join(path, "wiki.valid.tokens"))
         self.test = self.tokenize(os.path.join(path, "wiki.test.tokens"))
-
+        
+        self.train_word_counts = self.token_count(os.path.join(path, "wiki.train.tokens"))
+        
     def tokenize(self, path):
         """Tokenizes a text file."""
         assert os.path.exists(path)
@@ -47,3 +51,15 @@ class Corpus(object):
             ids = torch.cat(idss)
 
         return ids
+    
+    def token_count(self, path):
+        word_counts = {}
+        with open(path, "r", encoding="utf8") as f:
+            for line in f:
+                for word in line.split():
+                    if word not in word_counts:
+                        word_counts[word] = 1
+                    else:
+                        word_counts[word] += 1
+        return word_counts
+        
